@@ -1,0 +1,19 @@
+{
+  "entity": {
+    "sensor": {
+      "pac": {
+        "default": "mdi:flash"
+      },
+      "energy_today": {
+        "default": "mdi:counter"
+      },
+      "status": {
+        "default": "mdi:solar-power-variant-outline",
+        "state": {
+          "online": "mdi:solar-power-variant",
+          "offline": "mdi:solar-power-variant-outline"
+        }
+      }
+    }
+  }
+}

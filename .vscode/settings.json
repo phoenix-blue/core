@@ -1,0 +1,5 @@
+{
+    "powerquery.client.additionalSymbolsDirectories": [
+        "//192.168.10.115/Programmeren/1-ACTIEVE-PROJECTEN/Zeversolar/.vscode/excel-pq-symbols"
+    ]
+}
