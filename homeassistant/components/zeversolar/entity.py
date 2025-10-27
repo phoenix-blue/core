@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from homeassistant.const import CONF_HOST
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -23,23 +24,21 @@ class ZeversolarEntity(
     ) -> None:
         """Initialize the Zeversolar entity."""
         super().__init__(coordinator=coordinator)
-        # Use current data or last known data for device info
-        device_data = coordinator.data or coordinator.last_known_data
-        host = coordinator.config_entry.data.get("host", "unknown")
-        
-        if device_data:
+        # Provide fallback device info when inverter is offline
+        if coordinator.data:
             self._attr_device_info = DeviceInfo(
-                identifiers={(DOMAIN, device_data.serial_number)},
-                name="Zeversolar Inverter",
+                identifiers={(DOMAIN, coordinator.data.serial_number)},
+                name="Zeversolar Sensor",
                 manufacturer="Zeversolar",
-                serial_number=device_data.serial_number,
+                serial_number=coordinator.data.serial_number,
                 suggested_area="Solar System",
             )
         else:
-            # Use host-based device info when no data is available (offline setup)
+            # Use host-based identifier when offline
+            host = coordinator.config_entry.data[CONF_HOST]
             self._attr_device_info = DeviceInfo(
-                identifiers={(DOMAIN, f"zeversolar_{host}")},
-                name="Zeversolar Inverter", 
+                identifiers={(DOMAIN, host)},
+                name="Zeversolar Sensor",
                 manufacturer="Zeversolar",
                 suggested_area="Solar System",
             )

@@ -27,7 +27,9 @@ from .entity import ZeversolarEntity
 class ZeversolarEntityDescription(SensorEntityDescription):
     """Describes Zeversolar sensor entity."""
 
-    value_fn: Callable[[zeversolar.ZeverSolarData], zeversolar.kWh | zeversolar.Watt]
+    value_fn: Callable[
+        [zeversolar.ZeverSolarData | None], zeversolar.kWh | zeversolar.Watt | str
+    ]
 
 
 SENSOR_TYPES = (
@@ -46,11 +48,12 @@ SENSOR_TYPES = (
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         state_class=SensorStateClass.TOTAL_INCREASING,
         device_class=SensorDeviceClass.ENERGY,
-        value_fn=lambda data: data.energy_today if data else None,
+        value_fn=lambda data: data.energy_today if data else 0,
     ),
     ZeversolarEntityDescription(
         key="status",
         translation_key="status",
+        device_class=SensorDeviceClass.ENUM,
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: "online" if data else "offline",
     ),
@@ -77,7 +80,6 @@ class ZeversolarSensor(ZeversolarEntity, SensorEntity):
     """Implementation of the Zeversolar sensor."""
 
     entity_description: ZeversolarEntityDescription
-    _last_known_value: int | float | str | None = None
 
     def __init__(
         self,
@@ -88,35 +90,31 @@ class ZeversolarSensor(ZeversolarEntity, SensorEntity):
         """Initialize the sensor."""
         self.entity_description = description
         super().__init__(coordinator=coordinator)
-        # Use last known data for unique ID if current data is not available
-        device_data = coordinator.data or coordinator.last_known_data
-        host = coordinator.config_entry.data.get(CONF_HOST, "unknown")
-        
-        if device_data:
-            self._attr_unique_id = f"{device_data.serial_number}_{description.key}"
+        # Use host-based identifier as fallback when offline
+        if coordinator.data:
+            self._attr_unique_id = (
+                f"{coordinator.data.serial_number}_{description.key}"
+            )
         else:
-            # Use host-based unique ID when no serial number is available (offline setup)
-            self._attr_unique_id = f"zeversolar_{host}_{description.key}"
+            host = coordinator.config_entry.data[CONF_HOST]
+            self._attr_unique_id = f"{host}_{description.key}"
+        # Track last known value for energy sensor
+        self._last_known_value: int | float | str | None = None
 
     @property
-    def native_value(self) -> int | float | str | None:
+    def native_value(self) -> int | float | str:
         """Return sensor state."""
-        current_value = self.entity_description.value_fn(self.coordinator.data)
-        
-        # For energy_today sensor, preserve last known value when offline
-        if self.entity_description.key == "energy_today":
-            if current_value is not None:
-                self._last_known_value = current_value
-                return current_value
-            elif self._last_known_value is not None:
-                # Return last known value when offline
+        value = self.entity_description.value_fn(self.coordinator.data)
+        # Preserve last known energy value when offline
+        if self.entity_description.key == "energy_today" and value == 0:
+            if self._last_known_value is not None and self._last_known_value > 0:
                 return self._last_known_value
-        
-        return current_value
+        # Update last known value when online
+        if value != 0 or self.entity_description.key == "status":
+            self._last_known_value = value
+        return value
 
     @property
     def available(self) -> bool:
-        """Return True if entity is available."""
-        # Always show all sensors as available to prevent "unavailable" status
-        # The status sensor will show online/offline state instead
+        """Return True to prevent 'unavailable' state during offline periods."""
         return True

@@ -1,64 +1,79 @@
-# Zeversolar Home Assistant Integration - Verbeteringen
+# Zeversolar Home Assistant Integration - Improvements
 
-## Probleem
-De originele Zeversolar integratie had een probleem waarbij 's nachts of bij weinig zonlicht de omvormer uitschakelt (normaal gedrag), maar Home Assistant dit behandelde als een fout. Dit resulteerde in:
+## Problem
+The original Zeversolar integration had an issue where the inverter shuts down at night or in low sunlight conditions (normal behavior), but Home Assistant treated this as an error. This resulted in:
 - Error logs in Home Assistant
-- Rode foutmeldingen in de integratie interface
-- Onnodige zorgen voor gebruikers
+- Red error notifications in the integration interface
+- Unnecessary concerns for users
 
-## Oplossing
-Deze verbeterde versie implementeert slimme offline handling:
+## Solution
+This improved version implements smart offline handling:
 
-### Nieuwe Features
-1. **Status Sensor**: Een nieuwe sensor die "Online" of "Offline" toont
-2. **Slimme Error Handling**: Onderscheid tussen echte fouten en normale offline status
-3. **Behoud van Data**: Sensoren blijven beschikbaar met laatste bekende waarden
-4. **Verbeterde Logging**: Geen error logs voor normale offline situaties
+### New Features
+1. **Status Sensor**: A new sensor that shows "Online" or "Offline"
+2. **Smart Error Handling**: Distinguishes between real errors and normal offline status
+3. **Data Preservation**: Sensors remain available with last known values
+4. **Improved Logging**: No error logs for normal offline situations
 
-### Wijzigingen per Bestand
+### Changes per File
 
 #### `coordinator.py`
-- Toegevoegd: `is_online` status tracking
-- Toegevoegd: `last_known_data` opslag voor laatste bekende waarden
-- Verbeterd: Slimme error handling die onderscheid maakt tussen netwerkfouten en normale offline status
-- Verbeterd: Debug logging in plaats van error logging voor normale offline situaties
+- Added: `is_online` status tracking
+- Added: `last_known_data` storage for last known values
+- Improved: Smart error handling that distinguishes between network errors and normal offline status
+- Improved: Debug logging instead of error logging for normal offline situations
+- Added: Suppression of retry library logs during offline periods
 
 #### `sensor.py`
-- Toegevoegd: Nieuwe "status" sensor (online/offline)
-- Verbeterd: Sensoren tonen 0W in plaats van fout wanneer offline
-- Verbeterd: Energy sensor behoudt laatste waarde wanneer offline
-- Toegevoegd: `available` property die sensoren beschikbaar houdt
+- Added: New "status" sensor (online/offline)
+- Improved: Sensors show 0W instead of error when offline
+- Improved: Energy sensor preserves last value when offline
+- Added: `available` property that keeps sensors available
+- Improved: Smart value handling for offline periods
 
 #### `entity.py`
-- Verbeterd: Fallback device info wanneer geen data beschikbaar is
-- Toegevoegd: Gebruik van laatste bekende data voor device informatie
+- Improved: Fallback device info when no data is available
+- Added: Use of last known data for device information
+- Added: Support for offline setup scenarios
+
+#### `config_flow.py`
+- Improved: Allow configuration even when inverter is offline
+- Added: Offline setup support for nighttime configuration
+
+#### `__init__.py`
+- Improved: Skip initial refresh to allow setup when offline
+- Added: Graceful handling of offline state during setup
 
 #### `strings.json`
-- Toegevoegd: Vertalingen voor nieuwe status sensor
-- Toegevoegd: Online/Offline state vertalingen
+- Added: Translations for new status sensor
+- Added: Online/Offline state translations
 
-### Gedrag
-**Dag (omvormer aan):**
+#### `icons.json`
+- Updated: Better icons for inverter representation
+- Added: Status-specific icons for online/offline states
+
+### Behavior
+**Day (inverter on):**
 - Status: Online
-- Power sensor: Toont actuele wattage
-- Energy sensor: Toont dagelijkse opbrengst
-- Alle sensoren beschikbaar
+- Power sensor: Shows actual wattage
+- Energy sensor: Shows daily production
+- All sensors available
 
-**Nacht (omvormer uit):**
+**Night (inverter off):**
 - Status: Offline
-- Power sensor: Toont 0W
-- Energy sensor: Behoudt laatste bekende waarde
-- Alle sensoren blijven beschikbaar
-- Geen error logs of foutmeldingen
+- Power sensor: Shows 0W
+- Energy sensor: Retains last known value
+- All sensors remain available
+- No error logs or notifications
 
-### Voor Gebruikers
-- Geen onnodige foutmeldingen meer 's nachts
-- Duidelijke status indicator
-- Behoud van belangrijke data (energie opbrengst van die dag)
-- Automatisch herstel wanneer omvormer weer online komt
+### For Users
+- No more unnecessary error notifications at night
+- Clear status indicator
+- Preservation of important data (daily energy production)
+- Automatic recovery when inverter comes back online
 
-### Technische Details
-- Backward compatible met bestaande installaties
-- Gebruikt bestaande zeversolar library
-- Geen breaking changes in API
-- Minimale performance impact
+### Technical Details
+- Backward compatible with existing installations
+- Uses existing zeversolar library
+- No breaking changes in API
+- Minimal performance impact
