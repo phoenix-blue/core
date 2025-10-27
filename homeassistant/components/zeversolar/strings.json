@@ -22,11 +22,11 @@
   },
   "entity": {
     "sensor": {
-      "pac": {
-        "name": "Power"
-      },
       "energy_today": {
         "name": "Energy today"
+      },
+      "pac": {
+        "name": "Power"
       },
       "status": {
         "name": "Status",
